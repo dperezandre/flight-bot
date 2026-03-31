@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlightBot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Tokens ── */
+    [data-theme="light"] {
+      --bg:          #f8f9fa;
+      --surface:     #ffffff;
+      --surface2:    #f1f3f4;
+      --border:      #dadce0;
+      --border-hi:   #bdc1c6;
+      --text:        #202124;
+      --text2:       #5f6368;
+      --text3:       #80868b;
+      --blue:        #1a73e8;
+      --blue-lt:     #e8f0fe;
+      --blue-hover:  #1557b0;
+      --green:       #137333;
+      --green-bg:    #e6f4ea;
+      --green-bdr:   #ceead6;
+      --shadow:      0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
+      --shadow-md:   0 4px 12px rgba(0,0,0,.1);
+      --shadow-lg:   0 8px 24px rgba(0,0,0,.12);
+      --chip-bg:     #e8f0fe;
+      --chip-color:  #1a73e8;
+      --winner-bg:   #e6f4ea;
+      --winner-bdr:  #ceead6;
+      --winner-text: #137333;
+    }
+
+    [data-theme="dark"] {
+      --bg:          #111418;
+      --surface:     #1c2026;
+      --surface2:    #272b31;
+      --border:      #3c4043;
+      --border-hi:   #5f6368;
+      --text:        #e8eaed;
+      --text2:       #9aa0a6;
+      --text3:       #5f6368;
+      --blue:        #8ab4f8;
+      --blue-lt:     #1e2b3c;
+      --blue-hover:  #aecbfa;
+      --green:       #81c995;
+      --green-bg:    #1a2e1f;
+      --green-bdr:   #2d4a33;
+      --shadow:      0 1px 3px rgba(0,0,0,.4);
+      --shadow-md:   0 4px 12px rgba(0,0,0,.3);
+      --shadow-lg:   0 8px 24px rgba(0,0,0,.4);
+      --chip-bg:     #1e2b3c;
+      --chip-color:  #8ab4f8;
+      --winner-bg:   #1a2e1f;
+      --winner-bdr:  #2d4a33;
+      --winner-text: #81c995;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Roboto', sans-serif;
+      font-weight: 400;
+      min-height: 100vh;
+      transition: background .3s, color .3s;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      transition: background .3s, border-color .3s;
+    }
+
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .topbar-icon {
+      width: 36px; height: 36px;
+      background: var(--blue);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .topbar-name {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Theme toggle */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: var(--text2);
+      font-family: 'Roboto', sans-serif;
+      transition: background .2s, border-color .2s;
+      user-select: none;
+    }
+    .theme-toggle:hover { border-color: var(--border-hi); }
+    .theme-toggle .icon { font-size: 1rem; }
+
+    /* ── Hero ── */
+    .hero {
+      background: var(--blue);
+      padding: 48px 24px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    [data-theme="dark"] .hero { background: #1a2236; }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .hero h1 {
+      font-family: 'Google Sans', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      position: relative;
+    }
+
+    [data-theme="dark"] .hero h1 { color: var(--text); }
+
+    .hero p {
+      font-size: 1rem;
+      color: rgba(255,255,255,.8);
+      position: relative;
+    }
+
+    [data-theme="dark"] .hero p { color: var(--text2); }
+
+    /* ── Search card (floats over hero) ── */
+    .search-wrap {
+      max-width: 860px;
+      margin: -48px auto 0;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .search-card {
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      padding: 24px 28px 28px;
+      transition: background .3s;
+    }
+
+    /* Trip type chips */
+    .trip-chips {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .chip {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip.active {
+      background: var(--blue-lt);
+      border-color: var(--blue);
+      color: var(--blue);
+      font-weight: 500;
+    }
+
+    .chip:hover:not(.active) {
+      background: var(--surface2);
+    }
+
+    /* Form fields */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 44px 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 680px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .swap-col { display: none; }
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      font-size: 1rem;
+      pointer-events: none;
+    }
+
+    .field-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px 14px 40px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .field-input.no-icon { padding-left: 16px; text-transform: none; letter-spacing: 0; }
+
+    .field-input::placeholder { color: var(--text3); text-transform: none; letter-spacing: 0; font-size: 0.9rem; }
+
+    .field-input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(26,115,232,.2);
+    }
+
+    .field-label {
+      position: absolute;
+      top: -9px; left: 12px;
+      background: var(--surface);
+      padding: 0 4px;
+      font-size: 0.72rem;
+      color: var(--text3);
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      transition: background .3s;
+    }
+
+    .swap-col {
+      display: flex;
+      justify-content: center;
+    }
+
+    .swap-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      color: var(--text2);
+      transition: all .25s;
+    }
+
+    .swap-btn:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+      transform: rotate(180deg);
+    }
+
+    /* Return date row (shown only for round-trip) */
+    .return-row {
+      display: none;
+      margin-bottom: 16px;
+    }
+    .return-row.visible { display: block; }
+
+    /* Search button */
+    .btn-search {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      background: var(--blue);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-family: 'Google Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s, box-shadow .2s;
+    }
+
+    .btn-search:hover { background: var(--blue-hover); box-shadow: var(--shadow-md); }
+    .btn-search:active { transform: scale(.99); }
+    .btn-search:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Page content ── */
+    .content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* Alert */
+    .alert {
+      display: none;
+      background: #fce8e6;
+      border: 1px solid #f28b82;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.875rem;
+      color: #c5221f;
+      margin-bottom: 20px;
+    }
+    [data-theme="dark"] .alert { background: #2d1b1b; border-color: #f28b82; color: #f28b82; }
+    .alert.active { display: block; }
+
+    /* Loading */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 56px 0;
+    }
+    .loading.active { display: block; }
+
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading p {
+      font-size: 0.9rem;
+      color: var(--text2);
+    }
+
+    /* Winner */
+    .winner {
+      display: none;
+      background: var(--winner-bg);
+      border: 1px solid var(--winner-bdr);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      animation: fadeIn .4s ease both;
+    }
+    .winner.active { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+
+    .winner-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .winner-body { flex: 1; min-width: 0; }
+
+    .winner-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--winner-text);
+      margin-bottom: 4px;
+    }
+
+    .winner-price {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--winner-text);
+      line-height: 1.1;
+    }
+
+    .winner-detail {
+      font-size: 0.85rem;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+
+    /* Results */
+    .results { display: none; }
+    .results.active { display: block; animation: fadeIn .4s ease both; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .toolbar-left {
+      font-size: 0.9rem;
+      color: var(--text2);
+    }
+
+    .toolbar-left strong { color: var(--text); font-weight: 500; }
+
+    .sort-select {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .sort-select:focus { border-color: var(--blue); }
+
+    /* Day cards */
+    .day-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      transition: box-shadow .2s, border-color .2s, background .3s;
+    }
+
+    .day-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-hi); }
+    .day-card.is-best { border-color: var(--green); }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+      gap: 16px;
+    }
+
+    .day-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+      transition: background .2s;
+    }
+    .day-card.is-best .day-dot { background: var(--green); }
+
+    .day-date-col { flex: 1; }
+
+    .day-weekday {
+      font-size: 0.78rem;
+      color: var(--text3);
+      text-transform: capitalize;
+      margin-bottom: 2px;
+    }
+
+    .day-date-str {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .day-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .best-pill {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--green);
+      background: var(--green-bg);
+      border: 1px solid var(--green-bdr);
+      border-radius: 12px;
+      padding: 3px 10px;
+      white-space: nowrap;
+    }
+
+    .day-price-col { text-align: right; }
+
+    .day-from-label {
+      font-size: 0.72rem;
+      color: var(--text3);
+      margin-bottom: 2px;
+    }
+
+    .day-price-val {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    .day-price-val.best { color: var(--green); }
+    .day-price-val.none { color: var(--text3); font-size: 0.9rem; font-family: 'Roboto'; font-weight: 400; }
+
+    .toggle-arrow {
+      color: var(--text3);
+      font-size: 0.8rem;
+      transition: transform .25s;
+    }
+    .day-card.open .toggle-arrow { transform: rotate(180deg); }
+
+    /* Flights */
+    .day-flights { display: none; }
+    .day-card.open .day-flights { display: block; }
+
+    .flights-head {
+      display: grid;
+      grid-template-columns: 1.6fr 1.2fr 0.8fr 0.8fr 0.9fr;
+      padding: 8px 20px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text3);
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .flight-row {
+      display: grid;
+      grid-template-columns: 1.6fr 1.2fr 0.8fr 0.8fr 0.9fr;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      align-items: center;
+      transition: background .15s;
+    }
+
+    .flight-row:hover { background: var(--surface2); }
+    .flight-row.top-row { background: var(--green-bg); }
+    [data-theme="dark"] .flight-row.top-row { background: var(--green-bg); }
+
+    .fr-airline { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+    .fr-num { font-size: 0.78rem; color: var(--text3); margin-top: 2px; }
+    .fr-time { font-size: 0.9rem; color: var(--text2); }
+    .fr-dur { font-size: 0.85rem; color: var(--text2); }
+    .fr-stops { font-size: 0.85rem; color: var(--text2); }
+    .fr-price { font-family: 'Google Sans', sans-serif; font-size: 1rem; font-weight: 700; color: var(--blue); text-align: right; }
+    .fr-price.top { color: var(--green); }
+
+    .no-data { padding: 16px 20px; font-size: 0.875rem; color: var(--text3); font-style: italic; border-top: 1px solid var(--border); }
+    .err-data { padding: 14px 20px; font-size: 0.82rem; color: #c5221f; border-top: 1px solid var(--border); }
+
+    @media (max-width: 580px) {
+      .flights-head, .flight-row { grid-template-columns: 1fr 1fr 1fr; }
+      .fr-dur, .fr-stops { display: none; }
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .day-card { animation: fadeIn .3s ease both; }
+  </style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <a class="topbar-brand" href="#">
+    <div class="topbar-icon">✈</div>
+    <span class="topbar-name">FlightBot</span>
+  </a>
+  <button class="theme-toggle" onclick="toggleTheme()">
+    <span class="icon" id="themeIcon">🌙</span>
+    <span id="themeLabel">Modo escuro</span>
+  </button>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>Encontre passagens baratas</h1>
+  <p>Compare preços dia a dia e viaje gastando menos</p>
+</div>
+
+<!-- Search card -->
+<div class="search-wrap">
+  <div class="search-card">
+
+    <!-- Trip type -->
+    <div class="trip-chips">
+      <button class="chip active" id="chipOneWay" onclick="setTrip('oneway')">
+        ➜ Somente ida
+      </button>
+      <button class="chip" id="chipRound" onclick="setTrip('roundtrip')">
+        ⇄ Ida e volta
+      </button>
+    </div>
+
+    <!-- Main fields -->
+    <div class="form-grid">
+      <div class="input-wrap">
+        <span class="field-label">Origem</span>
+        <span class="input-icon">○</span>
+        <input class="field-input" id="origin" type="text" placeholder="Ex: GRU" maxlength="4" />
+      </div>
+
+      <div class="swap-col">
+        <button class="swap-btn" onclick="swapAirports()" title="Trocar">⇄</button>
+      </div>
+
+      <div class="input-wrap">
+        <span class="field-label">Destino</span>
+        <span class="input-icon">📍</span>
+        <input class="field-input" id="destination" type="text" placeholder="Ex: MIA" maxlength="4" />
+      </div>
+
+      <div class="input-wrap">
+        <span class="field-label">Dias para frente</span>
+        <span class="input-icon">📅</span>
+        <input class="field-input" id="days" type="number" placeholder="Ex: 30" min="1" max="240" />
+      </div>
+    </div>
+
+    <!-- Return days (round trip) -->
+    <div class="return-row" id="returnRow">
+      <div class="input-wrap" style="max-width:260px">
+        <span class="field-label">Dias de estadia (volta)</span>
+        <span class="input-icon">🔁</span>
+        <input class="field-input" id="returnDays" type="number" placeholder="Ex: 7" min="1" max="90" />
+      </div>
+    </div>
+
+    <button class="btn-search" id="btnSearch" onclick="searchFlights()">
+      🔍 &nbsp;Buscar Passagens
+    </button>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="content">
+  <div class="alert" id="alertBox"></div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p id="loadingMsg">Buscando voos...</p>
+  </div>
+
+  <div class="winner" id="winner">
+    <div class="winner-icon">🏆</div>
+    <div class="winner-body">
+      <div class="winner-label">Melhor preço encontrado</div>
+      <div class="winner-price" id="winnerPrice"></div>
+      <div class="winner-detail" id="winnerDetail"></div>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="toolbar">
+      <div class="toolbar-left" id="toolbarLeft"></div>
+      <select class="sort-select" id="sortSelect" onchange="applySort()">
+        <option value="date">📅 Ordenar por data</option>
+        <option value="price">💰 Menor preço primeiro</option>
+      </select>
+    </div>
+    <div id="resultsList"></div>
+  </div>
+</div>
+
+<script>
+  // ── State ──
+  let tripType = 'oneway';
+  let rawResults = [];
+  let overallCheapest = null;
+
+  // ── Theme ──
+  function toggleTheme() {
+    const html = document.documentElement;
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    document.getElementById('themeIcon').textContent  = isDark ? '🌙' : '☀️';
+    document.getElementById('themeLabel').textContent = isDark ? 'Modo escuro' : 'Modo claro';
+  }
+
+  // ── Trip type ──
+  function setTrip(type) {
+    tripType = type;
+    document.getElementById('chipOneWay').classList.toggle('active', type === 'oneway');
+    document.getElementById('chipRound').classList.toggle('active', type === 'roundtrip');
+    document.getElementById('returnRow').classList.toggle('visible', type === 'roundtrip');
+  }
+
+  // ── Swap ──
+  function swapAirports() {
+    const o = document.getElementById('origin');
+    const d = document.getElementById('destination');
+    [o.value, d.value] = [d.value, o.value];
+  }
+
+  // ── Helpers ──
+  function fmt(price) {
+    if (price == null) return '—';
+    return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function fmtDate(str) {
+    const [y, m, d] = str.split('-');
+    return new Date(+y, +m - 1, +d);
+  }
+
+  function weekdayStr(str) {
+    return fmtDate(str).toLocaleDateString('pt-BR', { weekday: 'long' });
+  }
+
+  function dateStr(str) {
+    return fmtDate(str).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function fmtDur(mins) {
+    if (!mins) return '—';
+    return `${Math.floor(mins / 60)}h${mins % 60 > 0 ? (mins % 60) + 'min' : ''}`;
+  }
+
+  function showAlert(msg) {
+    const el = document.getElementById('alertBox');
+    el.textContent = msg;
+    el.classList.add('active');
+  }
+
+  function hideAlert() { document.getElementById('alertBox').classList.remove('active'); }
+
+  // ── Search ──
+  async function searchFlights() {
+    const origin      = document.getElementById('origin').value.trim().toUpperCase();
+    const destination = document.getElementById('destination').value.trim().toUpperCase();
+    const days        = parseInt(document.getElementById('days').value);
+    const returnDays  = parseInt(document.getElementById('returnDays').value) || 7;
+
+    hideAlert();
+
+    if (!origin || origin.length < 3)      return showAlert('Informe o código IATA de origem. Ex: GRU');
+    if (!destination || destination.length < 3) return showAlert('Informe o código IATA de destino. Ex: MIA');
+    if (!days || days < 1 || days > 240)   return showAlert('Informe um número de dias entre 1 e 240.');
+    if (tripType === 'roundtrip' && (!returnDays || returnDays < 1)) return showAlert('Informe quantos dias de estadia para a volta.');
+
+    document.getElementById('btnSearch').disabled = true;
+    document.getElementById('loading').classList.add('active');
+    document.getElementById('results').classList.remove('active');
+    document.getElementById('winner').classList.remove('active');
+
+    const msgs = ['Buscando voos...', 'Consultando Google Flights...', 'Comparando tarifas...', 'Quase lá...'];
+    let mi = 0;
+    const interval = setInterval(() => {
+      document.getElementById('loadingMsg').textContent = msgs[++mi % msgs.length];
+    }, 2000);
+
+    try {
+      const body = { origin, destination, days, tripType, returnDays };
+      const res  = await fetch('/api/search-flights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.error) return showAlert('Erro: ' + data.error);
+      rawResults      = data.results;
+      overallCheapest = data.overallCheapest;
+      renderWinner();
+      applySort();
+      document.getElementById('toolbarLeft').innerHTML =
+        `<strong>${origin} → ${destination}</strong> &nbsp;·&nbsp; ${days} dia${days > 1 ? 's' : ''} analisado${days > 1 ? 's' : ''}`;
+      document.getElementById('results').classList.add('active');
+    } catch (e) {
+      showAlert('Erro ao conectar ao servidor. Verifique se o backend está rodando.');
+    } finally {
+      clearInterval(interval);
+      document.getElementById('loading').classList.remove('active');
+      document.getElementById('btnSearch').disabled = false;
+    }
+  }
+
+  // ── Winner ──
+  function renderWinner() {
+    if (!overallCheapest) return;
+    const c = overallCheapest.cheapest;
+    document.getElementById('winnerPrice').textContent  = fmt(c.price);
+    document.getElementById('winnerDetail').textContent =
+      `${dateStr(overallCheapest.date)} · ${c.airline} ${c.flightNumber} · ${c.departure} → ${c.arrival} · ${fmtDur(c.duration)} · ${c.stops === 0 ? 'Direto' : c.stops + ' parada(s)'}`;
+    document.getElementById('winner').classList.add('active');
+  }
+
+  // ── Sort & render ──
+  function applySort() {
+    const sort = document.getElementById('sortSelect').value;
+    let sorted = [...rawResults];
+    if (sort === 'price') {
+      sorted.sort((a, b) => {
+        const pa = a.cheapest?.price ?? Infinity;
+        const pb = b.cheapest?.price ?? Infinity;
+        return pa - pb;
+      });
+    }
+    renderList(sorted);
+  }
+
+  function renderList(results) {
+    const list = document.getElementById('resultsList');
+    list.innerHTML = '';
+
+    results.forEach((day, i) => {
+      const isBest = overallCheapest?.date === day.date;
+      const card   = document.createElement('div');
+      card.className = 'day-card' + (isBest ? ' is-best' : '');
+      card.style.animationDelay = `${i * 0.03}s`;
+
+      const priceHtml = day.cheapest
+        ? `<div class="day-from-label">A partir de</div>
+           <div class="day-price-val ${isBest ? 'best' : ''}">${fmt(day.cheapest.price)}</div>`
+        : `<div class="day-price-val none">Sem voos</div>`;
+
+      card.innerHTML = `
+        <div class="day-header" onclick="toggleCard(this)">
+          <div class="day-dot"></div>
+          <div class="day-date-col">
+            <div class="day-weekday">${weekdayStr(day.date)}</div>
+            <div class="day-date-str">${dateStr(day.date)}</div>
+          </div>
+          <div class="day-right">
+            ${isBest ? '<span class="best-pill">✦ Mais barato</span>' : ''}
+            <div class="day-price-col">${priceHtml}</div>
+            <span class="toggle-arrow">▾</span>
+          </div>
+        </div>
+        <div class="day-flights">${buildFlights(day)}</div>
+      `;
+
+      if (isBest) card.classList.add('open');
+      list.appendChild(card);
+    });
+  }
+
+  function buildFlights(day) {
+    if (day.error)          return `<div class="err-data">⚠ ${day.error}</div>`;
+    if (!day.flights?.length) return `<div class="no-data">Nenhum voo disponível para esta data.</div>`;
+
+    const head = `<div class="flights-head">
+      <span>Companhia</span><span>Horário</span><span>Duração</span><span>Paradas</span><span style="text-align:right">Preço</span>
+    </div>`;
+
+    const rows = day.flights.map((f, i) => `
+      <div class="flight-row ${i === 0 ? 'top-row' : ''}">
+        <div><div class="fr-airline">${f.airline}</div><div class="fr-num">${f.flightNumber}</div></div>
+        <div class="fr-time">${f.departure} → ${f.arrival}</div>
+        <div class="fr-dur">${fmtDur(f.duration)}</div>
+        <div class="fr-stops">${f.stops === 0 ? 'Direto' : f.stops + ' parada(s)'}</div>
+        <div class="fr-price ${i === 0 ? 'top' : ''}">${fmt(f.price)}</div>
+      </div>
+    `).join('');
+
+    return head + rows;
+  }
+
+  function toggleCard(header) {
+    header.closest('.day-card').classList.toggle('open');
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') searchFlights(); });
+</script>
+</body>
+</html>
